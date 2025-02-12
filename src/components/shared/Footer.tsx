@@ -8,11 +8,11 @@ export function Footer() {
                 <div className="flex flex-col items-center justify-between md:flex-row">
                     <div className="flex items-center space-x-2">
                         <Film className="h-6 w-6 text-purple-500" />
-                        <span className="text-lg font-bold text-white">MovieWatch</span>
+                        <span className="text-lg font-bold text-white">CineStream</span>
                     </div>
                     <div className="mt-4 md:mt-0">
                         <p className="text-gray-400 text-sm">
-                            © {new Date().getFullYear()} MovieWatch. All rights reserved.
+                            © {new Date().getFullYear()} CineStream. All rights reserved.
                         </p>
                     </div>
                 </div>

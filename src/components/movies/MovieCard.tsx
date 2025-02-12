@@ -1,7 +1,8 @@
-// MovieCard.tsx
+// components/movies/MovieCard.tsx
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Star, Clock, Plus, Info, X } from 'lucide-react';
 import type { Movie } from '../../types/movie.types';
 
@@ -12,9 +13,22 @@ interface MovieCardProps {
 
 export const MovieCard = ({ movie, onAddToWatchlist }: MovieCardProps) => {
     const [showDetails, setShowDetails] = useState(false);
+    const router = useRouter();
+
+    const handleMovieClick = () => {
+        router.push(`/movies/${movie._id}`);
+    };
+
+    const handleActionClick = (e: React.MouseEvent, action: () => void) => {
+        e.stopPropagation(); // Prevent the card click event
+        action();
+    };
 
     return (
-        <div className="group relative rounded-xl overflow-hidden bg-gradient-to-b from-purple-950/30 to-black/80 backdrop-blur-sm border border-purple-900/20 hover:border-purple-700/50 transition-all duration-500">
+        <div 
+            onClick={handleMovieClick}
+            className="group relative rounded-xl overflow-hidden bg-gradient-to-b from-purple-950/30 to-black/80 backdrop-blur-sm border border-purple-900/20 hover:border-purple-700/50 transition-all duration-500 cursor-pointer"
+        >
             <div className="aspect-[2/3] relative">
                 <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-60" />
                 <img
@@ -26,17 +40,19 @@ export const MovieCard = ({ movie, onAddToWatchlist }: MovieCardProps) => {
                 {/* Action Buttons */}
                 <div className="absolute top-4 right-4 z-10 flex gap-2">
                     <button
-                        onClick={() => setShowDetails(true)}
+                        onClick={(e) => handleActionClick(e, () => setShowDetails(true))}
                         className="p-2 rounded-full bg-black/50 hover:bg-purple-600/50 border border-purple-500/30 transition-all duration-300"
                     >
                         <Info className="h-5 w-5 text-white" />
                     </button>
-                    <button
-                        onClick={() => onAddToWatchlist?.(movie)}
-                        className="p-2 rounded-full bg-black/50 hover:bg-purple-600/50 border border-purple-500/30 transition-all duration-300"
-                    >
-                        <Plus className="h-5 w-5 text-white" />
-                    </button>
+                    {onAddToWatchlist && (
+                        <button
+                            onClick={(e) => handleActionClick(e, () => onAddToWatchlist(movie))}
+                            className="p-2 rounded-full bg-black/50 hover:bg-purple-600/50 border border-purple-500/30 transition-all duration-300"
+                        >
+                            <Plus className="h-5 w-5 text-white" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Card Content */}
@@ -65,9 +81,12 @@ export const MovieCard = ({ movie, onAddToWatchlist }: MovieCardProps) => {
                 </div>
             </div>
 
-            {/* Movie Details Modal */}
+            {/* Quick View Modal */}
             {showDetails && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+                <div 
+                    className="fixed inset-0 z-50 flex items-center justify-center px-4"
+                    onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from triggering card click
+                >
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowDetails(false)} />
                     <div className="relative bg-gradient-to-b from-purple-950 to-black border border-purple-500/30 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <button
@@ -78,15 +97,15 @@ export const MovieCard = ({ movie, onAddToWatchlist }: MovieCardProps) => {
                         </button>
 
                         <div className="p-8">
-                            <div className="flex gap-6">
-                                <div className="w-1/3">
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="w-full md:w-1/3">
                                     <img
                                         src={movie.image}
                                         alt={movie.title}
                                         className="w-full rounded-lg"
                                     />
                                 </div>
-                                <div className="w-2/3">
+                                <div className="w-full md:w-2/3">
                                     <h2 className="text-2xl font-bold text-white mb-2">{movie.title}</h2>
                                     <div className="flex flex-wrap gap-2 mb-4">
                                         <span className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-full text-sm text-purple-300">
@@ -116,6 +135,15 @@ export const MovieCard = ({ movie, onAddToWatchlist }: MovieCardProps) => {
                                             <span className="font-semibold">Cast:</span> {movie.cast.join(', ')}
                                         </div>
                                     )}
+                                    
+                                    {/* View Details Button */}
+                                    <button
+                                        onClick={handleMovieClick}
+                                        className="mt-6 w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-300 flex items-center justify-center gap-2"
+                                    >
+                                        <Info className="h-5 w-5" />
+                                        View Full Details
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -1,80 +1,38 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Film, Popcorn, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
-import { MovieCard} from '@/components/movies/MovieCard';
-import { MovieGrid } from '@/components/movies/MovieGrid';
-import { SearchFilters } from '@/components/movies/SearchFilters';
-import { BackgroundBeams } from '@/components/ui/background-beams';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/components/ui/use-toast';
-import type { Movie, MovieFilter } from '@/types/movie.types';
-//import type { ApiResponse } from '@/types/api.types';
-
-// Sample data - Replace with your API calls
-const SAMPLE_MOVIES: Movie[] = [
-    {
-        id: '1',
-        title: 'Dune: Part Two',
-        image: '/movies/dune2.jpg',
-        rating: '9.2',
-        genre: 'Sci-Fi',
-        runtime: '166m',
-        year: '2024',
-        description: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.',
-        director: 'Denis Villeneuve',
-        cast: ['Timothée Chalamet', 'Zendaya', 'Rebecca Ferguson']
-    },
-    {
-        id: '2',
-        title: 'Oppenheimer',
-        image: '/movies/oppenheimer.jpg',
-        rating: '9.0',
-        genre: 'Drama',
-        runtime: '180m',
-        year: '2023',
-        description: 'The story of J. Robert Oppenheimer&poss role in the development of the atomic bomb during World War II.',
-    director: 'Christopher Nolan',
-        cast: ['Cillian Murphy', 'Emily Blunt', 'Matt Damon']
-    },
-    {
-        id: '3',
-        title: 'Poor Things',
-        image: '/movies/poor-things.jpg',
-        rating: '8.8',
-        genre: 'Fantasy',
-        runtime: '141m',
-        year: '2023',
-        description: 'The incredible tale about the fantastical evolution of Bella Baxter, a young woman brought back to life by the brilliant and unorthodox scientist Dr. Godwin Baxter.',
-        director: 'Yorgos Lanthimos',
-        cast: ['Emma Stone', 'Mark Ruffalo', 'Willem Dafoe']
-    }
-];
-
-const FEATURED_MOVIES = SAMPLE_MOVIES.slice(0, 4);
+import { Film, Popcorn, Sparkles, AlertCircle, Loader2, Search, Star, Calendar, TrendingUp } from 'lucide-react';
+import { MovieCard } from '../../components/movies/MovieCard';
+import { MovieGrid } from '../../components/movies/MovieGrid';
+import SearchFilters from '../../components/movies/SearchFilters';
+import { Alert, AlertDescription } from '../../components/ui/alert';
+import { useToast } from '../../components/ui/use-toast';
+import type { Movie, MovieFilter } from '../../types/movie.types';
 
 export default function MoviesPage() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [movies, setMovies] = useState<Movie[]>([]);
-    const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
+    const [error, setError] = useState(null);
+    const [movies, setMovies] = useState([]);
+    const [filteredMovies, setFilteredMovies] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentFilters, setCurrentFilters] = useState<MovieFilter>({
+    const [currentFilters, setCurrentFilters] = useState({
         genre: '',
         year: '',
         rating: '',
         sortBy: 'popularity'
     });
 
-    // Simulate API call to fetch movies
     useEffect(() => {
         const fetchMovies = async () => {
             try {
-                // Replace with actual API call
-                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate loading
-                setMovies(SAMPLE_MOVIES);
-                setFilteredMovies(SAMPLE_MOVIES);
+                const response = await fetch('/api/movies');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch movies');
+                }
+                const data = await response.json();
+                setMovies(data.movies);
+                setFilteredMovies(data.movies);
                 setLoading(false);
             } catch (err) {
                 setError('Failed to fetch movies. Please try again later.');
@@ -90,7 +48,12 @@ export default function MoviesPage() {
         fetchMovies();
     }, []);
 
-    // Handle search and filtering
+    const getFeaturedMovies = () => {
+        return [...movies]
+            .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+            .slice(0, 4);
+    };
+
     const handleSearch = (query: string) => {
         setSearchQuery(query);
         applyFilters(query, currentFilters);
@@ -104,17 +67,19 @@ export default function MoviesPage() {
     const applyFilters = (query: string, filters: MovieFilter) => {
         let filtered = [...movies];
 
-        // Apply search
         if (query) {
             const searchLower = query.toLowerCase();
             filtered = filtered.filter(movie =>
                 movie.title.toLowerCase().includes(searchLower) ||
                 movie.description.toLowerCase().includes(searchLower) ||
-                movie.genre.toLowerCase().includes(searchLower)
+                movie.genre.toLowerCase().includes(searchLower) ||
+                (movie.director && movie.director.toLowerCase().includes(searchLower)) ||
+                (movie.cast && movie.cast.some(actor => 
+                    actor.toLowerCase().includes(searchLower)
+                ))
             );
         }
 
-        // Apply filters
         if (filters.genre) {
             filtered = filtered.filter(movie =>
                 movie.genre.toLowerCase() === filters.genre?.toLowerCase()
@@ -129,7 +94,6 @@ export default function MoviesPage() {
             );
         }
 
-        // Apply sorting
         switch (filters.sortBy) {
             case 'rating':
                 filtered.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
@@ -137,17 +101,23 @@ export default function MoviesPage() {
             case 'latest':
                 filtered.sort((a, b) => parseInt(b.year) - parseInt(a.year));
                 break;
-            // Add more sorting options as needed
+            case 'title':
+                filtered.sort((a, b) => a.title.localeCompare(b.title));
+                break;
         }
 
         setFilteredMovies(filtered);
     };
 
-    // Handle adding to watchlist
     const handleAddToWatchlist = async (movie: Movie) => {
         try {
-            // Replace with actual API call
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await fetch('/api/watchlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ movieId: movie._id }),
+            });
 
             toast({
                 title: "Added to Watchlist",
@@ -165,10 +135,13 @@ export default function MoviesPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center">
+            <div className="min-h-screen bg-gradient-to-b from-black via-purple-950/20 to-black flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-8 w-8 text-purple-500 animate-spin" />
-                    <p className="text-gray-400">Loading amazing movies for you...</p>
+                    <div className="relative">
+                       <Loader2 className="h-12 w-12 text-purple-500 animate-spin" />
+                        <div className="absolute inset-0 blur-xl bg-purple-500/20 animate-pulse" />
+                    </div>
+                    <p className="text-gray-400 font-medium text-lg animate-pulse">Loading your cinematic journey...</p>
                 </div>
             </div>
         );
@@ -176,8 +149,8 @@ export default function MoviesPage() {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-black flex items-center justify-center p-4">
-                <Alert variant="destructive" className="max-w-xl">
+            <div className="min-h-screen bg-gradient-to-b from-black via-purple-950/20 to-black flex items-center justify-center p-4">
+                <Alert variant="destructive" className="max-w-xl backdrop-blur-xl bg-red-950/50 border-red-500/50">
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>{error}</AlertDescription>
                 </Alert>
@@ -185,86 +158,116 @@ export default function MoviesPage() {
         );
     }
 
+    const featuredMovies = getFeaturedMovies();
+
     return (
-        <div className="min-h-screen bg-black">
+        <div className="min-h-screen bg-gradient-to-b from-black via-purple-950/20 to-black">
             <div className="relative">
-                <BackgroundBeams className="absolute top-0 left-0 w-full h-full opacity-40" />
+                {/* Animated background elements */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-radial from-purple-500/20 via-transparent to-transparent animate-slow-spin" />
+                    <div className="absolute top-0 left-0 w-full h-full bg-[url('/grid.svg')] opacity-90" />
+                </div>
 
-                <div className="relative container mx-auto px-6 py-12">
-                    {/* Header Section */}
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
-                        <div className="flex items-center gap-4">
-                            <Film className="h-10 w-10 text-purple-500" />
-                            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-purple-300">
-                                Discover Movies
-                            </h1>
-                        </div>
-
-                        <div className="flex items-center gap-3 text-gray-400">
-                            <Popcorn className="h-5 w-5" />
-                            <span>{filteredMovies.length} movies available</span>
-                        </div>
-                    </div>
-
-                    {/* Search and Filters */}
-                    <div className="mb-12">
-                        <SearchFilters
-                            onSearch={handleSearch}
-                            onFilterChange={handleFilterChange}
+                <div className="relative">
+                    {/* Hero Section */}
+                    <div className="relative h-96 overflow-hidden mb-12">
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/50 to-black" />
+                        <div 
+                            className="absolute inset-0 bg-cover bg-center animate-slow-pan"
+                            style={{
+                                backgroundImage: `url('/movie-collage.jpg')`,
+                                backgroundPosition: 'center',
+                                backgroundSize: 'cover'
+                            }}
                         />
+                        <div className="relative container mx-auto px-6 h-full flex items-center">
+                            <div className="max-w-2xl">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <Film className="h-12 w-12 text-purple-500" />
+                                    <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-300 to-purple-500">
+                                        Cinematic Universe
+                                    </h1>
+                                </div>
+                                <p className="text-xl text-gray-300 mb-8">Discover your next favorite movie in our carefully curated collection</p>
+                                <div className="flex items-center gap-6 text-gray-400">
+                                    <div className="flex items-center gap-2">
+                                        <Popcorn className="h-5 w-5 text-purple-500" />
+                                        <span>{filteredMovies.length} Movies</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Star className="h-5 w-5 text-yellow-500" />
+                                        <span>Top Rated</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <TrendingUp className="h-5 w-5 text-green-500" />
+                                        <span>Trending</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* Featured Section */}
-                    <div className="mb-16">
-                        <div className="flex items-center gap-3 mb-8">
-                            <Sparkles className="h-6 w-6 text-purple-500" />
-                            <h2 className="text-2xl font-semibold text-white">Featured Movies</h2>
+                    <div className="container mx-auto px-6">
+                        {/* Search and Filters */}
+                        <div className="mb-16">
+                            <div className="backdrop-blur-xl bg-black/30 rounded-2xl border border-purple-500/20 p-6 shadow-2xl">
+                                <SearchFilters
+                                    onSearch={handleSearch}
+                                    onFilterChange={handleFilterChange}
+                                    genres={[...new Set(movies.map(movie => movie.genre))]}
+                                    years={[...new Set(movies.map(movie => movie.year))]}
+                                />
+                            </div>
                         </div>
 
-                        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-900/20 to-black/20 border border-purple-900/20 p-8">
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-transparent" />
-                            <MovieGrid>
-                                {FEATURED_MOVIES.map((movie) => (
-                                    <MovieCard
-                                        key={movie.id}
-                                        movie={movie}
-                                        onAddToWatchlist={handleAddToWatchlist}
-                                    />
-                                ))}
-                            </MovieGrid>
-                        </div>
-                    </div>
+                        {/* Featured Section */}
+                        {featuredMovies.length > 0 && (
+                            <div className="mb-20">
+                                <div className="flex items-center gap-3 mb-8">
+                                    <Sparkles className="h-8 w-8 text-purple-500" />
+                                    <h2 className="text-3xl font-bold text-white">Featured Films</h2>
+                                </div>
 
-                    {/* All Movies Section */}
-                    <div>
-                        <h2 className="text-2xl font-semibold text-white mb-8">All Movies</h2>
-                        {filteredMovies.length > 0 ? (
-                            <MovieGrid>
-                                {filteredMovies.map((movie) => (
-                                    <MovieCard
-                                        key={movie.id}
-                                        movie={movie}
-                                        onAddToWatchlist={handleAddToWatchlist}
-                                    />
-                                ))}
-                            </MovieGrid>
-                        ) : (
-                            <div className="text-center py-12">
-                                <p className="text-gray-400">No movies found matching your criteria.</p>
+                                <div className="relative rounded-3xl overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 to-black/30 backdrop-blur-sm" />
+                                    <div className="relative p-8">
+                                        <MovieGrid>
+                                            {featuredMovies.map((movie) => (
+                                                <MovieCard
+                                                    key={movie._id}
+                                                    movie={movie}
+                                                    onAddToWatchlist={handleAddToWatchlist}
+                                                    featured
+                                                />
+                                            ))}
+                                        </MovieGrid>
+                                    </div>
+                                </div>
                             </div>
                         )}
-                    </div>
 
-                    {/* Load More Button */}
-                    {filteredMovies.length > 0 && (
-                        <div className="flex justify-center mt-12">
-                            <button className="px-8 py-4 rounded-lg bg-purple-600/20 hover:bg-purple-600/30 
-                               border border-purple-500/30 hover:border-purple-500/50 
-                               text-white font-medium transition-all duration-300">
-                                Load More Movies
-                            </button>
+                        {/* All Movies Section */}
+                        <div className="mb-20">
+                            <h2 className="text-3xl font-bold text-white mb-8">Explore All Movies</h2>
+                            {filteredMovies.length > 0 ? (
+                                <MovieGrid>
+                                    {filteredMovies.map((movie) => (
+                                        <MovieCard
+                                            key={movie._id}
+                                            movie={movie}
+                                            onAddToWatchlist={handleAddToWatchlist}
+                                        />
+                                    ))}
+                                </MovieGrid>
+                            ) : (
+                                <div className="text-center py-20 backdrop-blur-xl bg-black/30 rounded-3xl border border-purple-500/20">
+                                    <Search className="h-12 w-12 text-purple-500 mx-auto mb-4" />
+                                    <p className="text-gray-400 text-lg">No movies found matching your criteria.</p>
+                                </div>
+                            )}
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

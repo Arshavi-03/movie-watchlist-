@@ -1,7 +1,7 @@
 // app/api/auth/register/route.ts
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/mongodb';
-import User from '@/models/user.model';
+import dbConnect from '../../../../lib/mongodb';
+import User from '../../../../models/user.model';
 
 export async function POST(request: Request) {
     try {

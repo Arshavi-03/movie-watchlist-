@@ -1,13 +1,8 @@
-// SearchFilters.tsx
+// components/movies/SearchFilters.tsx
 'use client';
 
 import { useState } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
-
-interface SearchFiltersProps {
-    onSearch: (query: string) => void;
-    onFilterChange: (filters: FilterState) => void;
-}
 
 interface FilterState {
     genre: string;
@@ -16,7 +11,14 @@ interface FilterState {
     sortBy: string;
 }
 
-export const SearchFilters = ({ onSearch, onFilterChange }: SearchFiltersProps) => {
+interface SearchFiltersProps {
+    onSearch: (query: string) => void;
+    onFilterChange: (filters: FilterState) => void;
+    genres?: string[];
+    years?: string[];
+}
+
+export default function SearchFilters({ onSearch, onFilterChange, genres = [], years = [] }: SearchFiltersProps) {
     const [showFilters, setShowFilters] = useState(false);
     const [filters, setFilters] = useState<FilterState>({
         genre: '',
@@ -85,13 +87,11 @@ export const SearchFilters = ({ onSearch, onFilterChange }: SearchFiltersProps) 
                             className="px-4 py-3 rounded-lg bg-purple-950/20 border border-purple-900/50 text-white outline-none cursor-pointer hover:border-purple-500/50 transition-all duration-300"
                         >
                             <option value="">All Genres</option>
-                            <option value="action">Action</option>
-                            <option value="drama">Drama</option>
-                            <option value="comedy">Comedy</option>
-                            <option value="scifi">Sci-Fi</option>
-                            <option value="horror">Horror</option>
-                            <option value="thriller">Thriller</option>
-                            <option value="romance">Romance</option>
+                            {genres.map((genre) => (
+                                <option key={genre} value={genre.toLowerCase()}>
+                                    {genre}
+                                </option>
+                            ))}
                         </select>
 
                         <select
@@ -112,16 +112,15 @@ export const SearchFilters = ({ onSearch, onFilterChange }: SearchFiltersProps) 
                             className="px-4 py-3 rounded-lg bg-purple-950/20 border border-purple-900/50 text-white outline-none cursor-pointer hover:border-purple-500/50 transition-all duration-300"
                         >
                             <option value="">All Years</option>
-                            <option value="2024">2024</option>
-                            <option value="2023">2023</option>
-                            <option value="2022">2022</option>
-                            <option value="2021">2021</option>
-                            <option value="2020">2020</option>
-                            <option value="older">Earlier</option>
+                            {years.map((year) => (
+                                <option key={year} value={year}>
+                                    {year}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>
             )}
         </div>
     );
-};
+}
