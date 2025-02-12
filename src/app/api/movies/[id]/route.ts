@@ -1,13 +1,24 @@
-// app/api/movies/[id]/route.ts
-import { NextResponse } from 'next/server';
-import Movie from '@/models/movie.model';
+import { NextRequest, NextResponse } from 'next/server';
+import dbConnect from '../../../../lib/mongodb';
+import Movie from '../../../../models/Movie';
 
 export async function GET(
-    request: Request,
+    request: NextRequest,
     { params }: { params: { id: string } }
 ) {
     try {
-        const movie = await Movie.findById(params.id);
+        await dbConnect();
+        
+        // Validate the ID parameter
+        const movieId = params?.id;
+        if (!movieId) {
+            return NextResponse.json(
+                { error: 'Movie ID is required' },
+                { status: 400 }
+            );
+        }
+
+        const movie = await Movie.findById(movieId).lean();
 
         if (!movie) {
             return NextResponse.json(
@@ -16,11 +27,11 @@ export async function GET(
             );
         }
 
-        return NextResponse.json(movie);
+        return NextResponse.json({ movie });
     } catch (error) {
         console.error('Error fetching movie:', error);
         return NextResponse.json(
-            { error: 'Error fetching movie' },
+            { error: 'Failed to fetch movie details' },
             { status: 500 }
         );
     }

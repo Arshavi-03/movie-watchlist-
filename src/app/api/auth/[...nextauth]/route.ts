@@ -1,8 +1,8 @@
 // app/api/auth/[...nextauth]/route.ts
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import dbConnect from '@/lib/mongodb';
-import User from '@/models/user.model';
+import dbConnect from '../../../../lib/mongodb';
+import User from '../../../../models/user.model';
 import bcrypt from 'bcryptjs';
 
 export const authOptions = {

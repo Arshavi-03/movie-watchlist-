@@ -16,7 +16,7 @@ export function Navbar() {
                     {/* Logo */}
                     <Link href="/" className="flex items-center space-x-2">
                         <Film className="h-6 w-6 text-purple-500" />
-                        <span className="text-xl font-bold text-white">MovieWatch</span>
+                        <span className="text-xl font-bold text-white">CineStream</span>
                     </Link>
 
                     {/* Desktop Navigation */}
